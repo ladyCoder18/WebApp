@@ -11,40 +11,34 @@ class DisplayDetailsPage extends StatefulWidget {
 }
 
 class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
-
-  final TextEditingController dateController = TextEditingController();
-  final TextEditingController nameController = TextEditingController();
-  List<Map<String, dynamic>> _data = []; // List to store retrieved data
+  TextEditingController _queryController = TextEditingController();
+  List<String> _queryTypes = ['Name', 'Date']; // Query type options
+  String _selectedQueryType = 'Name'; // Default selected query type
+  List<Map<String, dynamic>> _data = [];
   int _currentPage = 1;
   int _pageSize = 10;
 
   Future<void> _getData() async {
-    String date = dateController.text;
-    List<Map<String, dynamic>> data = await DatabaseHelper.instance.getPagedData(date, _currentPage, _pageSize);
+    String query = _queryController.text;
+    if (_selectedQueryType == 'Name') {
+      List<Map<String, dynamic>> data =
+      await DatabaseHelper.instance.getPagedDataByName(query);
+      _updateData(data);
+    } else {
+      List<Map<String, dynamic>> data =
+      await DatabaseHelper.instance.getPagedData(query, _currentPage, _pageSize);
+      _updateData(data);
+    }
+  }
+
+  void _updateData(List<Map<String, dynamic>> data) {
     setState(() {
       _data = data;
     });
 
-    //Clear the contents
-    dateController.clear();
-    nameController.clear();
+    // Clear the contents
+    _queryController.clear();
   }
-
-  Future<void> _getDataByName() async {
-    String name = nameController.text;
-    print('Name'+ name);
-    List<Map<String, dynamic>> data = await DatabaseHelper.instance.getPagedDataByName(name);
-    setState(() {
-      _data = data;
-    });
-
-    print("object");
-    print(_data);
-    //Clear the contents
-    dateController.clear();
-    nameController.clear();
-  }
-
 
   Future<void> _exportToCSV() async {
     // Generate CSV data from _data list
@@ -54,7 +48,7 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
           ' ${item['lastName']},'
           ' ${item['emailId']},'
           ' ${item['gender']},'
-          ' ${item['dob']},'
+          ' ${item['dateOfBirth:']},'
           ' ${item['phoneNumber']},'
           ' ${item['ssn']},'
           ' ${item['streetAddress']},'
@@ -62,7 +56,7 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
           ' ${item['state']},'
           ' ${item['creditCardNumber']},'
           ' ${item['cvv']},'
-          ' ${item['drivingLicenseNumber']}\n'; // Update with actual field names
+          ' ${item['driverLicenseNumber:']}\n'; // Update with actual field names
     }
 
     // Get the application documents directory
@@ -113,9 +107,9 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
           cells: [
             DataCell(Text(item['firstName'] ?? 'N/A')),
             DataCell(Text(item['lastName']?? 'N/A')),
-            DataCell(Text(item['emailID'] ?? 'N/A')),
+            DataCell(Text(item['emailId'] ?? 'N/A')),
             DataCell(Text(item['gender'] ?? 'N/A')),
-            DataCell(Text(item['dob'] ?? 'N/A')),
+            DataCell(Text(item['dateOfBirth'] ?? 'N/A')),
             DataCell(Text(item['phoneNumber'].toString())),
             DataCell(Text(item['ssn'].toString())),
             DataCell(Text(item['streetAddress'].toString())),
@@ -149,26 +143,38 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            TextField(
-              controller: dateController,
-              decoration: InputDecoration(labelText: 'Enter Date (YYYY-MM-DD)'),
-            ),
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(labelText: 'Enter Name'),
+            DropdownButton<String>(
+              value: _selectedQueryType,
+              onChanged: (newValue) {
+                setState(() {
+                  _selectedQueryType = newValue!;
+                });
+              },
+              items: _queryTypes.map<DropdownMenuItem<String>>((queryType) {
+                return DropdownMenuItem<String>(
+                  value: queryType,
+                  child: Text(queryType),
+                );
+              }).toList(),
             ),
             SizedBox(height: 20),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    _getDataByName();
-                  },
-                  child: Text('Get Data'),
-                ),
-                SizedBox(width: 10), // Add some space between the buttons
-                exportButton,
-              ],
+            TextField(
+              controller: _queryController,
+              decoration: InputDecoration(
+                labelText: 'Enter ${_selectedQueryType.toLowerCase()}',
+              ),
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: () {
+                if (_queryController.text.isNotEmpty) {
+                  _getData();
+                } else {
+                  // Handle empty query case
+                  // Show an error message or perform appropriate action
+                }
+              },
+              child: Text('Get Data'),
             ),
             SizedBox(height: 20),
             dataWidget,
