@@ -13,12 +13,11 @@ class AdminDashboardPage extends StatefulWidget {
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   List<User> _users = [];
-  List<UserData> _data = [];
 
   @override
   void initState() {
     super.initState();
-    _loadUsers(); // Load users when the page is initialized
+    _loadUsers();
   }
 
   Future<void> _loadUsers() async {
@@ -55,15 +54,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         String dateOfBirth = row[4].toString();
         String phoneNumber = row[5].toString();
         String ssn = row[6].toString();
-        String streetAddress = row[7].toString();
+        String address = row[7].toString();
         String city = row[8].toString();
         String state = row[9].toString();
         String creditCardNumber = row[10].toString();
         String cvv = row[11].toString();
         String driverLicenseNumber = row[12].toString();
 
-        // Check if entry already exists in the database
-        // int existingId = await DatabaseHelper.instance.checkIfDataExistsWithEmailId(emailId);
         UserData newData = UserData(
             firstName: firstName,
             lastName: lastName,
@@ -72,20 +69,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             dateOfBirth: dateOfBirth,
             phoneNumber: phoneNumber,
             ssn: ssn,
-            streetAddress: streetAddress,
+            address: address,
             city: city,
             state: state,
             creditCardNumber: creditCardNumber,
             cvv: cvv,
             driverLicenseNumber: driverLicenseNumber);
 
-        /*if (existingId != 0) {
-          // If the entry exists, update it with the new values
-          await DatabaseHelper.instance.updateData(existingId, newData);
-        } else {*/
-          // If the entry does not exist, insert a new entry
           await DatabaseHelper.instance.insertData(newData);
-        //}
       }
 
       // Reload data after importing

@@ -42,7 +42,7 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
 
   Future<void> _exportToCSV() async {
     // Generate CSV data from _data list
-    String csvData = 'FirstName, LastName, EmailId, Gender, DOB, PhoneNumber, SSN, StreetAddress, City, State, CreditCardNumber,CVV, DrivingLicenseNumber\n';
+    String csvData = 'FirstName, LastName, EmailId, Gender, DOB, PhoneNumber, SSN, Address, City, State, CreditCardNumber,CVV, DriverLicenseNumber\n';
     for (var item in _data) {
       csvData += '${item['firstName']},'
           ' ${item['lastName']},'
@@ -51,12 +51,12 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
           ' ${item['dateOfBirth:']},'
           ' ${item['phoneNumber']},'
           ' ${item['ssn']},'
-          ' ${item['streetAddress']},'
+          ' ${item['address']},'
           ' ${item['city']},'
           ' ${item['state']},'
           ' ${item['creditCardNumber']},'
           ' ${item['cvv']},'
-          ' ${item['driverLicenseNumber:']}\n'; // Update with actual field names
+          ' ${item['driverLicenseNumber']}\n'; // Update with actual field names
     }
 
     // Get the application documents directory
@@ -84,44 +84,47 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
       }
     }
 
+    Widget _getCellValue(dynamic value) {
+      return value != null
+          ? Icon(Icons.check, color: Colors.green)
+          : Container(); // Return an empty container if value is null
+    }
+
     Widget dataWidget = _data.isNotEmpty
-        ? DataTable(
-      columns: [
-        DataColumn(label: Text('FirstName')),
-        DataColumn(label: Text('LastName')),
-        DataColumn(label: Text('EmailID')),
-        DataColumn(label: Text('Gender')),
-        DataColumn(label: Text('DOB')),
-        DataColumn(label: Text('PhoneNumber')),
-        DataColumn(label: Text('SSN')),
-        DataColumn(label: Text('StreetAddress')),
-        DataColumn(label: Text('City')),
-        DataColumn(label: Text('State')),
-        DataColumn(label: Text('CreditCardNumber')),
-        DataColumn(label: Text('CVV')),
-        DataColumn(label: Text('DriverLicenseNumber')),
-      ],
-      rows: _data
-          .map(
-            (item) => DataRow(
-          cells: [
-            DataCell(Text(item['firstName'] ?? 'N/A')),
-            DataCell(Text(item['lastName']?? 'N/A')),
-            DataCell(Text(item['emailId'] ?? 'N/A')),
-            DataCell(Text(item['gender'] ?? 'N/A')),
-            DataCell(Text(item['dateOfBirth'] ?? 'N/A')),
-            DataCell(Text(item['phoneNumber'].toString())),
-            DataCell(Text(item['ssn'].toString())),
-            DataCell(Text(item['streetAddress'].toString())),
-            DataCell(Text(item['city'].toString())),
-            DataCell(Text(item['state'].toString())),
-            DataCell(Text(item['creditCardNumber'].toString())),
-            DataCell(Text(item['cvv'].toString())),
-            DataCell(Text(item['driverLicenseNumber'].toString())),
+        ? SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SingleChildScrollView(
+        child: DataTable(
+          columns: [
+            DataColumn(label: Text('FirstName')),
+            DataColumn(label: Text('LastName')),
+            DataColumn(label: Text('EmailID')),
+            DataColumn(label: Text('PhoneNumber')),
+            DataColumn(label: Text('DOB')),
+            DataColumn(label: Text('SSN')),
+            DataColumn(label: Text('Address')),
+            DataColumn(label: Text('CreditCardNumber')),
+            DataColumn(label: Text('DriverLicenseNumber')),
           ],
+          rows: _data
+              .map(
+                (item) => DataRow(
+              cells: [
+                DataCell(Text(item['firstName'])),
+                DataCell(Text(item['lastName'] ?? 'N/A')),
+                DataCell(Text(item['emailId'] ?? 'N/A')),
+                DataCell(Text(item['phoneNumber'].toString())),
+                DataCell(_getCellValue(item['dateOfBirth'])), // Show check mark if not null
+                DataCell(_getCellValue(item['ssn'])), // Show check mark if not null
+                DataCell(_getCellValue(item['address'])),
+                DataCell(_getCellValue(item['creditCardNumber'])), // Show check mark if not null
+                DataCell(_getCellValue(item['driverLicenseNumber'])), // Show check mark if not null
+              ],
+            ),
+          )
+              .toList(),
         ),
-      )
-          .toList(),
+      ),
     )
         : Center(
       child: Text('No data available.'),
@@ -165,16 +168,17 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
               ),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                if (_queryController.text.isNotEmpty) {
-                  _getData();
-                } else {
-                  // Handle empty query case
-                  // Show an error message or perform appropriate action
-                }
-              },
-              child: Text('Get Data'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _getData();
+                  },
+                  child: Text('Get Data'),
+                ),
+                SizedBox(width: 10), // Add some space between the buttons
+                exportButton,
+              ],
             ),
             SizedBox(height: 20),
             dataWidget,

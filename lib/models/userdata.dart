@@ -7,7 +7,7 @@ class UserData{
   final String dateOfBirth;
   final String phoneNumber;
   final String ssn;
-  final String streetAddress;
+  final String address;
   final String city;
   final String state;
   final String creditCardNumber;
@@ -23,7 +23,7 @@ class UserData{
     required this.dateOfBirth,
     required this.phoneNumber,
     required this.ssn,
-    required this.streetAddress,
+    required this.address,
     required this.city,
     required this.state,
     required this.creditCardNumber,
@@ -39,7 +39,7 @@ class UserData{
       'dateOfBirth' : dateOfBirth,
       'phoneNumber' : phoneNumber,
       'ssn' : ssn,
-      'streetAddress' : streetAddress,
+      'address' : address,
       'city' : city,
       'state' : state,
       'creditCardNumber' : creditCardNumber,
