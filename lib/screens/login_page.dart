@@ -23,7 +23,8 @@ class LoginPage extends StatelessWidget {
 
       if (user != null) {
         // Regular user login successful, navigate to display details page
-        Navigator.pushNamed(context, '/display-details', arguments: user);
+        print('Login Successful');
+        Navigator.pushNamed(context, '/displayDetails');
       } else {
         // Login failed, show an error message
         showDialog(

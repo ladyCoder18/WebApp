@@ -1,10 +1,10 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/user.dart';
-import '../models/data.dart';
+import '../models/userdata.dart';
 
 class DatabaseHelper {
-  static final _databaseName = 'app_database.db';
+  static final _databaseName = 'webapp_database.db';
   static final _databaseVersion = 1;
 
   DatabaseHelper._privateConstructor();
@@ -39,20 +39,20 @@ class DatabaseHelper {
       )
     ''');
     await db.execute('''
-      CREATE TABLE user(id INTEGER PRIMARY KEY AUTOINCREMENT,"
-          " firstName TEXT,"
-          " lastName TEXT,"
-          "emailId TEXT,"
-          "gender TEXT,"
-          "dateOfBirth TEXT,"
-          "phoneNumber TEXT,"
-          "ssn TEXT,"
-          "streetAddress TEXT,"
-          "city TEXT,"
-          "state TEXT,"
-          "creditCardNumber TEXT,"
-          "cvv TEXT,"
-          "driverLicenseNumber TEXT)",
+      CREATE TABLE userData(
+      firstName TEXT,
+      lastName TEXT,
+      emailId TEXT,
+      gender TEXT,
+      dateOfBirth TEXT,
+      phoneNumber TEXT,
+      ssn TEXT,
+      streetAddress TEXT,
+      city TEXT,
+      state TEXT,
+      creditCardNumber TEXT,
+      cvv TEXT,
+      driverLicenseNumber TEXT
     )
     ''');
   }
@@ -70,9 +70,9 @@ class DatabaseHelper {
     return await db.insert('users', user.toMap());
   }
 
-  Future<int> insertData(Data data) async {
+  Future<int> insertData(UserData data) async {
     Database db = await instance.database;
-    return await db.insert('data', data.toMap());
+    return await db.insert('userData', data.toMap());
   }
 
   Future<User?> getUserByUsernameAndPassword(String username, String password) async {
@@ -83,8 +83,8 @@ class DatabaseHelper {
       id: results[0]['id'],
       username: results[0]['username'],
       password: results[0]['password'],
-      canRead: results[0]['canRead'],
-      canWrite: results[0]['canWrite']
+      canRead: results[0]['canRead'] == 1 ? true : false,
+      canWrite: results[0]['canWrite'] == 1 ? true : false
     );
   }
 
@@ -94,9 +94,8 @@ class DatabaseHelper {
 
     // SQLite query to retrieve paged data based on date and name
     String query = '''
-      SELECT * FROM data
-      WHERE dateOfBirth = ? 
-      ORDER BY id DESC
+      SELECT * FROM userData
+      WHERE dateOfBirth = ?
       LIMIT $pageSize OFFSET $offset
     ''';
 
@@ -106,6 +105,24 @@ class DatabaseHelper {
 
     return result;
   }
+
+  Future<List<Map<String, dynamic>>> getPagedDataByName(String firstName) async {
+    Database db = await instance.database;
+
+    // SQLite query to retrieve paged data based on firstName
+    String query = '''
+    SELECT * FROM userData
+    WHERE firstName = ?
+  ''';
+
+    // Pass firstName as an argument to the query
+    List<Map<String, dynamic>> result = await db.rawQuery(query, [firstName]);
+
+    print(result);
+
+    return result;
+  }
+
 
   Future<void> updateUserPermissions(String userName, bool canRead, bool canWrite) async {
     Database db = await instance.database;
@@ -122,12 +139,12 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> updateData(int? id, Data data) async {
+  Future<void> updateData(int? id, UserData data) async {
     Database db = await instance.database;
 
     // Assuming your users table has columns named 'id', 'canRead', and 'canWrite'
     await db.update(
-      'data',
+      'userData',
       {
         'firstName' : data.firstName,
         'lastName' : data.lastName,
@@ -168,17 +185,16 @@ class DatabaseHelper {
     return users;
   }
 
-  Future<List<Data>> getAllData() async {
+  Future<List<UserData>> getAllData() async {
     Database db = await instance.database;
 
     // Assuming your User class has properties: id, username, canRead, and canWrite
-    List<Map<String, dynamic>> result = await db.query('data');
+    List<Map<String, dynamic>> result = await db.query('userData');
 
     // Convert the List<Map<String, dynamic>> to List<User>
-    List<Data> data = [];
+    List<UserData> data = [];
     for (Map<String, dynamic> row in result) {
-      data.add(Data(
-          id: row['id'],
+      data.add(UserData(
           firstName: row['firstName'],
           lastName: row['lastName'],
           emailId: row['emailId'],
@@ -197,21 +213,21 @@ class DatabaseHelper {
     return data;
   }
 
-  Future<int> checkIfDataExistsWithEmailId(String emailId) async{
+  /*Future<UserData> checkIfDataExistsWithEmailId(String emailId) async{
     Database db = await instance.database;
 
     // SQLite query to retrieve paged data based on date and name
     String query = '''
-      SELECT * FROM data
+      SELECT * FROM userData
       WHERE emailId = ? 
       ORDER BY id DESC
     ''';
 
     // Replace date_column and name_column with actual column names in your 'data' table
     // Pass date and name as arguments to the query
-    List<Map<String, dynamic>> result = await db.query('data');
+    List<Map<String, dynamic>> result = await db.query('userData');
 
-    if (result.isEmpty) return 0;
-    return result[0]['id'];
-  }
+    if (result.isEmpty) return null;
+    return result[0];
+  }*/
 }

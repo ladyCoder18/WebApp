@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:webapp/screens/display_details.dart';
 import '../screens/login_page.dart';
 
 
@@ -12,6 +13,9 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
+      routes: {
+        '/displayDetails': (context) => DisplayDetailsPage(),
+      },
       home: LoginPage(),
     );
   }

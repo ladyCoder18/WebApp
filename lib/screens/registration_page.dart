@@ -74,6 +74,10 @@ class RegistrationPage extends StatelessWidget {
         },
       );
     }
+
+    //Clear the contents
+    usernameController.clear();
+    passwordController.clear();
   }
 
   @override

@@ -2,7 +2,7 @@ import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
 import '../services/database_helper.dart';
 import '../models/user.dart';
-import '../models/data.dart';
+import '../models/userdata.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
@@ -13,7 +13,7 @@ class AdminDashboardPage extends StatefulWidget {
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   List<User> _users = [];
-  List<Data> _data = [];
+  List<UserData> _data = [];
 
   @override
   void initState() {
@@ -29,7 +29,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   }
 
   Future<void> _loadData() async {
-    List<Data> data = await DatabaseHelper.instance.getAllData();
+    List<UserData> data = await DatabaseHelper.instance.getAllData();
     setState(() {
       _data = data;
     });
@@ -38,7 +38,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Future<void> _importCSV() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['csv', 'xls, xlsx'],
+      allowedExtensions: ['csv', 'xls', 'xlsx'],
     );
 
     if (result != null) {
@@ -63,8 +63,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         String driverLicenseNumber = row[12].toString();
 
         // Check if entry already exists in the database
-        int existingId = await DatabaseHelper.instance.checkIfDataExistsWithEmailId(emailId);
-        Data newData = Data(
+        // int existingId = await DatabaseHelper.instance.checkIfDataExistsWithEmailId(emailId);
+        UserData newData = UserData(
             firstName: firstName,
             lastName: lastName,
             emailId: emailId,
@@ -79,13 +79,13 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             cvv: cvv,
             driverLicenseNumber: driverLicenseNumber);
 
-        if (existingId != 0) {
+        /*if (existingId != 0) {
           // If the entry exists, update it with the new values
           await DatabaseHelper.instance.updateData(existingId, newData);
-        } else {
+        } else {*/
           // If the entry does not exist, insert a new entry
           await DatabaseHelper.instance.insertData(newData);
-        }
+        //}
       }
 
       // Reload data after importing

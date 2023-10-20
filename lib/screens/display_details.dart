@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
 import '../models/user.dart';
 import '../services/database_helper.dart';
 
@@ -11,6 +11,7 @@ class DisplayDetailsPage extends StatefulWidget {
 }
 
 class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
+
   final TextEditingController dateController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   List<Map<String, dynamic>> _data = []; // List to store retrieved data
@@ -23,7 +24,27 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
     setState(() {
       _data = data;
     });
+
+    //Clear the contents
+    dateController.clear();
+    nameController.clear();
   }
+
+  Future<void> _getDataByName() async {
+    String name = nameController.text;
+    print('Name'+ name);
+    List<Map<String, dynamic>> data = await DatabaseHelper.instance.getPagedDataByName(name);
+    setState(() {
+      _data = data;
+    });
+
+    print("object");
+    print(_data);
+    //Clear the contents
+    dateController.clear();
+    nameController.clear();
+  }
+
 
   Future<void> _exportToCSV() async {
     // Generate CSV data from _data list
@@ -37,41 +58,91 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
           ' ${item['phoneNumber']},'
           ' ${item['ssn']},'
           ' ${item['streetAddress']},'
-          '${item['city']},'
+          ' ${item['city']},'
           ' ${item['state']},'
           ' ${item['creditCardNumber']},'
           ' ${item['cvv']},'
           ' ${item['drivingLicenseNumber']}\n'; // Update with actual field names
     }
 
-    // Saving CSV data to a file
-    final Directory directory = await getApplicationDocumentsDirectory();
-    final String filePath = '${directory.path}/data.csv';
-    File file = File(filePath);
+    // Get the application documents directory
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/data.csv');
+
+    // Write the CSV data to the file
     await file.writeAsString(csvData);
 
-    // Copy CSV data to clipboard for easy sharing
-    await Clipboard.setData(ClipboardData(text: csvData));
-
-
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text('CSV data exported and copied to clipboard.'),
+      content: Text('CSV file exported to ${file.path}'),
     ));
   }
 
   @override
   Widget build(BuildContext context) {
-    User user = ModalRoute.of(context)?.settings.arguments as User;
+    User? user; // Make User nullable to handle potential null values
+
+    @override
+    void didChangeDependencies() {
+      super.didChangeDependencies();
+      // Handle null check and type cast here
+      if (ModalRoute.of(context)?.settings.arguments != null) {
+        user = ModalRoute.of(context)!.settings.arguments as User?;
+      }
+    }
+
+    Widget dataWidget = _data.isNotEmpty
+        ? DataTable(
+      columns: [
+        DataColumn(label: Text('FirstName')),
+        DataColumn(label: Text('LastName')),
+        DataColumn(label: Text('EmailID')),
+        DataColumn(label: Text('Gender')),
+        DataColumn(label: Text('DOB')),
+        DataColumn(label: Text('PhoneNumber')),
+        DataColumn(label: Text('SSN')),
+        DataColumn(label: Text('StreetAddress')),
+        DataColumn(label: Text('City')),
+        DataColumn(label: Text('State')),
+        DataColumn(label: Text('CreditCardNumber')),
+        DataColumn(label: Text('CVV')),
+        DataColumn(label: Text('DriverLicenseNumber')),
+      ],
+      rows: _data
+          .map(
+            (item) => DataRow(
+          cells: [
+            DataCell(Text(item['firstName'] ?? 'N/A')),
+            DataCell(Text(item['lastName']?? 'N/A')),
+            DataCell(Text(item['emailID'] ?? 'N/A')),
+            DataCell(Text(item['gender'] ?? 'N/A')),
+            DataCell(Text(item['dob'] ?? 'N/A')),
+            DataCell(Text(item['phoneNumber'].toString())),
+            DataCell(Text(item['ssn'].toString())),
+            DataCell(Text(item['streetAddress'].toString())),
+            DataCell(Text(item['city'].toString())),
+            DataCell(Text(item['state'].toString())),
+            DataCell(Text(item['creditCardNumber'].toString())),
+            DataCell(Text(item['cvv'].toString())),
+            DataCell(Text(item['driverLicenseNumber'].toString())),
+          ],
+        ),
+      )
+          .toList(),
+    )
+        : Center(
+      child: Text('No data available.'),
+    );
+
+    Widget exportButton = _data.isNotEmpty
+        ? IconButton(
+      icon: Icon(Icons.file_download),
+      onPressed: _exportToCSV,
+    )
+        : SizedBox();
 
     return Scaffold(
       appBar: AppBar(
         title: Text('Display Details'),
-        actions: <Widget>[
-          IconButton(
-            icon: Icon(Icons.file_download),
-            onPressed: _exportToCSV,
-          ),
-        ],
       ),
       body: Padding(
         padding: EdgeInsets.all(16.0),
@@ -87,55 +158,20 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
               decoration: InputDecoration(labelText: 'Enter Name'),
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                _getData();
-              },
-              child: Text('Get Data'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: () {
+                    _getDataByName();
+                  },
+                  child: Text('Get Data'),
+                ),
+                SizedBox(width: 10), // Add some space between the buttons
+                exportButton,
+              ],
             ),
             SizedBox(height: 20),
-            _data.isNotEmpty
-                ? DataTable(
-              columns: [
-                DataColumn(label: Text('FirstName')),
-                DataColumn(label: Text('LastName')),
-                DataColumn(label: Text('EmailID')),
-                DataColumn(label: Text('Gender')),
-                DataColumn(label: Text('DOB')),
-                DataColumn(label: Text('PhoneNumber')),
-                DataColumn(label: Text('SSN')),
-                DataColumn(label: Text('StreetAddress')),
-                DataColumn(label: Text('City')),
-                DataColumn(label: Text('State')),
-                DataColumn(label: Text('CreditCardNumber')),
-                DataColumn(label: Text('CVV')),
-                DataColumn(label: Text('DriverLicenseNumber')),
-              ],
-              rows: _data
-                  .map(
-                    (item) => DataRow(
-                  cells: [
-                    DataCell(Text(item['FirstName'])),
-                    DataCell(Text(item['LastName'])),
-                    DataCell(Text(item['EmailID'])),
-                    DataCell(Text(item['Gender'])),
-                    DataCell(Text(item['DOB'])),
-                    DataCell(Text(item['PhoneNumber'].toString())),
-                    DataCell(Text(item['SSN'].toString())),
-                    DataCell(Text(item['StreetAddress'].toString())),
-                    DataCell(Text(item['City'].toString())),
-                    DataCell(Text(item['State'].toString())),
-                    DataCell(Text(item['CreditCardNumber'].toString())),
-                    DataCell(Text(item['CVV'].toString())),
-                    DataCell(Text(item['DriverLicenseNumber'].toString())),
-                  ],
-                ),
-              )
-                  .toList(),
-            )
-                : Center(
-              child: Text('No data available.'),
-            ),
+            dataWidget,
             SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

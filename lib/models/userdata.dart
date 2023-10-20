@@ -1,6 +1,5 @@
-class Data{
+class UserData{
 
-  final int? id;
   final String firstName;
   final String lastName;
   final String emailId;
@@ -16,8 +15,7 @@ class Data{
   final String driverLicenseNumber;
 
 
-  Data({
-    this.id,
+  UserData({
     required this.firstName,
     required this.lastName,
     required this.emailId,
@@ -34,7 +32,6 @@ class Data{
 
   Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'firstName': firstName,
       'lastName': lastName,
       'emailId': emailId,
