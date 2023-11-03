@@ -2,18 +2,23 @@ class User {
   final int? id;
   final String username;
   final String password;
-  final bool canRead;
+  final String emailId;
   final bool canWrite;
 
-  User({this.id, required this.username, required this.password, this.canRead = false, this.canWrite = false});
+  User(
+      {this.id,
+      required this.username,
+      required this.password,
+      required this.emailId,
+      this.canWrite = false});
 
   Map<String, dynamic> toMap() {
     return {
       'id': id,
       'username': username,
       'password': password,
-      'canRead' : canRead,
-      'canWrite' : canWrite
+      'emailId' : emailId,
+      'canWrite': canWrite
     };
   }
 }

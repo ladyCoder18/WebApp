@@ -1,5 +1,4 @@
-class UserData{
-
+class UserData {
   final String firstName;
   final String lastName;
   final String emailId;
@@ -13,22 +12,23 @@ class UserData{
   final String creditCardNumber;
   final String cvv;
   final String driverLicenseNumber;
+  final String createdDate;
 
-
-  UserData({
-    required this.firstName,
-    required this.lastName,
-    required this.emailId,
-    required this.gender,
-    required this.dateOfBirth,
-    required this.phoneNumber,
-    required this.ssn,
-    required this.address,
-    required this.city,
-    required this.state,
-    required this.creditCardNumber,
-    required this.cvv,
-    required this.driverLicenseNumber});
+  UserData(
+      {required this.firstName,
+      required this.lastName,
+      required this.emailId,
+      required this.gender,
+      required this.dateOfBirth,
+      required this.phoneNumber,
+      required this.ssn,
+      required this.address,
+      required this.city,
+      required this.state,
+      required this.creditCardNumber,
+      required this.cvv,
+      required this.driverLicenseNumber,
+      required this.createdDate});
 
   Map<String, dynamic> toMap() {
     return {
@@ -36,15 +36,16 @@ class UserData{
       'lastName': lastName,
       'emailId': emailId,
       'gender': gender,
-      'dateOfBirth' : dateOfBirth,
-      'phoneNumber' : phoneNumber,
-      'ssn' : ssn,
-      'address' : address,
-      'city' : city,
-      'state' : state,
-      'creditCardNumber' : creditCardNumber,
+      'dateOfBirth': dateOfBirth,
+      'phoneNumber': phoneNumber,
+      'ssn': ssn,
+      'address': address,
+      'city': city,
+      'state': state,
+      'creditCardNumber': creditCardNumber,
       'cvv': cvv,
-      'driverLicenseNumber': driverLicenseNumber
+      'driverLicenseNumber': driverLicenseNumber,
+      'createdDate' : createdDate
     };
   }
 }

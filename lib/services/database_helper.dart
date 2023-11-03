@@ -34,7 +34,7 @@ class DatabaseHelper {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT,
         password TEXT,
-        canRead INTEGER, 
+        emailId TEXT, 
         canWrite INTEGER
       )
     ''');
@@ -52,18 +52,11 @@ class DatabaseHelper {
       state TEXT,
       creditCardNumber TEXT,
       cvv TEXT,
-      driverLicenseNumber TEXT
+      driverLicenseNumber TEXT,
+      createdDate TEXT
     )
     ''');
   }
-
-  /*Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 1) {
-      // Perform schema changes for version 2 (and subsequent versions, if needed).
-      await db.execute('ALTER TABLE users ADD COLUMN new_column TEXT;');
-    }
-    // Add more conditions for other version upgrades if necessary.
-  }*/
 
   Future<int> insertUser(User user) async {
     Database db = await instance.database;
@@ -75,20 +68,36 @@ class DatabaseHelper {
     return await db.insert('userData', data.toMap());
   }
 
-  Future<User?> getUserByUsernameAndPassword(String username, String password) async {
+  Future<User?> getUserByEmailId(String emailId) async {
     Database db = await instance.database;
-    List<Map<String, dynamic>> results = await db.query('users', where: 'username = ? and password = ?', whereArgs: [username, password]);
+    List<Map<String, dynamic>> results = await db.query('users', where: 'emailId = ?', whereArgs: [emailId]);
     if (results.isEmpty) return null;
     return User(
-      id: results[0]['id'],
-      username: results[0]['username'],
-      password: results[0]['password'],
-      canRead: results[0]['canRead'] == 1 ? true : false,
-      canWrite: results[0]['canWrite'] == 1 ? true : false
+        id: results[0]['id'],
+        username: results[0]['username'],
+        password: results[0]['password'],
+        emailId: results[0]['emailId'],
+        canWrite: results[0]['canWrite']
     );
   }
 
-  Future<List<Map<String, dynamic>>> getPagedData(String dateOfBirth, int page, int pageSize) async {
+  Future<User?> getUserByUsernameAndPassword(
+      String username, String password) async {
+    Database db = await instance.database;
+    List<Map<String, dynamic>> results = await db.query('users',
+        where: 'username = ? and password = ?',
+        whereArgs: [username, password]);
+    if (results.isEmpty) return null;
+    return User(
+        id: results[0]['id'],
+        username: results[0]['username'],
+        password: results[0]['password'],
+        emailId: results[0]['emailId'],
+        canWrite: results[0]['canWrite'] == 1 ? true : false);
+  }
+
+  Future<List<Map<String, dynamic>>> getPagedData(
+      String dateOfBirth, int page, int pageSize) async {
     Database db = await instance.database;
     int offset = (page - 1) * pageSize;
 
@@ -106,7 +115,8 @@ class DatabaseHelper {
     return result;
   }
 
-  Future<List<Map<String, dynamic>>> getPagedDataByName(String firstName) async {
+  Future<List<Map<String, dynamic>>> getPagedDataByName(
+      String firstName) async {
     Database db = await instance.database;
 
     // SQLite query to retrieve paged data based on firstName
@@ -118,24 +128,21 @@ class DatabaseHelper {
     // Pass firstName as an argument to the query
     List<Map<String, dynamic>> result = await db.rawQuery(query, [firstName]);
 
-    print(result);
-
     return result;
   }
 
-
-  Future<void> updateUserPermissions(String userName, bool canRead, bool canWrite) async {
+  Future<void> updateUserPermissions(String emailId, bool canWrite) async {
     Database db = await instance.database;
 
     // Assuming your users table has columns named 'id', 'canRead', and 'canWrite'
     await db.update(
       'users',
       {
-        'canRead': canRead ? 1 : 0, // Store boolean as 1 for true, 0 for false
+        // Store boolean as 1 for true, 0 for false
         'canWrite': canWrite ? 1 : 0,
       },
-      where: 'userName = ?',
-      whereArgs: [userName],
+      where: 'emailId = ?',
+      whereArgs: [emailId],
     );
   }
 
@@ -146,18 +153,18 @@ class DatabaseHelper {
     await db.update(
       'userData',
       {
-        'firstName' : data.firstName,
-        'lastName' : data.lastName,
-        'gender' : data.gender,
-        'emailId' : data.emailId,
-        'phoneNumber' : data.phoneNumber,
-        'ssn' : data.ssn,
-        'address' : data.address,
-        'city' : data.city,
-        'state' : data.state,
-        'creditCardNumber' : data.creditCardNumber,
-        'cvv' : data.cvv,
-        'driverLicenseNumber' : data.driverLicenseNumber,
+        'firstName': data.firstName,
+        'lastName': data.lastName,
+        'gender': data.gender,
+        'emailId': data.emailId,
+        'phoneNumber': data.phoneNumber,
+        'ssn': data.ssn,
+        'address': data.address,
+        'city': data.city,
+        'state': data.state,
+        'creditCardNumber': data.creditCardNumber,
+        'cvv': data.cvv,
+        'driverLicenseNumber': data.driverLicenseNumber,
       },
       where: 'id = ?',
       whereArgs: [id],
@@ -177,7 +184,7 @@ class DatabaseHelper {
         id: row['id'],
         username: row['username'],
         password: row['password'],
-        canRead: row['canRead'] == 1, // Convert 1 to true, 0 to false
+        emailId: row['emailId'],// Convert 1 to true, 0 to false
         canWrite: row['canWrite'] == 1,
       ));
     }
@@ -207,27 +214,55 @@ class DatabaseHelper {
           state: row['state'],
           creditCardNumber: row['creditCardNumber'],
           cvv: row['cvv'],
-          driverLicenseNumber: row['driverLicenseNumber']
+          driverLicenseNumber: row['driverLicenseNumber'],
+          createdDate: row['createdDate']
       ));
     }
     return data;
   }
 
-  /*Future<UserData> checkIfDataExistsWithEmailId(String emailId) async{
+  Future<List<UserData>> getDataBetweenDates(
+      String startDate, String endDate) async {
     Database db = await instance.database;
 
-    // SQLite query to retrieve paged data based on date and name
     String query = '''
       SELECT * FROM userData
-      WHERE emailId = ? 
-      ORDER BY id DESC
+      WHERE createdDate BETWEEN ? AND ?
     ''';
 
-    // Replace date_column and name_column with actual column names in your 'data' table
-    // Pass date and name as arguments to the query
-    List<Map<String, dynamic>> result = await db.query('userData');
+    List<Map<String, dynamic>> result =
+    await db.rawQuery(query, [startDate, endDate]);
 
-    if (result.isEmpty) return null;
-    return result[0];
-  }*/
+    List<UserData> data = [];
+    for (Map<String, dynamic> row in result) {
+      data.add(UserData(
+        firstName: row['firstName'],
+        lastName: row['lastName'],
+        emailId: row['emailId'],
+        gender: row['gender'],
+        dateOfBirth: row['dateOfBirth'],
+        phoneNumber: row['phoneNumber'],
+        ssn: row['ssn'],
+        address: row['address'],
+        city: row['city'],
+        state: row['state'],
+        creditCardNumber: row['creditCardNumber'],
+        cvv: row['cvv'],
+        driverLicenseNumber: row['driverLicenseNumber'],
+        createdDate: row['createdDate']
+      ));
+    }
+    return data;
+  }
+
+  void deleteUser(String emailId) async {
+    Database db = await instance.database;
+    await db.delete('users', where: 'emailId = ?', whereArgs: [emailId]);
+  }
+
+  Future<void> deleteUserData(String emailId) async {
+    Database db = await instance.database;
+    await db.delete('userData', where: 'emailId = ?', whereArgs: [emailId]);
+  }
+
 }

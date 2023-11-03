@@ -1,5 +1,6 @@
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
+import 'package:webapp/screens/login_page.dart';
 import '../services/database_helper.dart';
 import '../models/user.dart';
 import '../models/userdata.dart';
@@ -13,6 +14,8 @@ class AdminDashboardPage extends StatefulWidget {
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
   List<User> _users = [];
+  List<UserData> _data = [];
+  List<User> _selectedUsers = [];
 
   @override
   void initState() {
@@ -34,6 +37,29 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     });
   }
 
+  void _deleteSelectedUsers() {
+    // Delete selected users from the database
+    for (User user in _selectedUsers) {
+      DatabaseHelper.instance.deleteUser(user.emailId);
+    }
+
+    // Clear the selected users list
+    _selectedUsers.clear();
+
+    // Reload users after deletion
+    _loadUsers();
+
+    // Show a SnackBar to indicate that users have been deleted
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text('Selected users deleted successfully.'),
+    ));
+  }
+
+  void _addUser() {
+    // Show a dialog to enter user details
+    // Handle user addition logic here
+  }
+
   Future<void> _importCSV() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -43,7 +69,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     if (result != null) {
       File file = File(result.files.single.path!);
       String contents = await file.readAsString();
-      List<List<dynamic>> rowsAsListOfValues = CsvToListConverter().convert(contents);
+      List<List<dynamic>> rowsAsListOfValues =
+          CsvToListConverter().convert(contents);
 
       // Import new data from the CSV file
       for (List<dynamic> row in rowsAsListOfValues) {
@@ -60,6 +87,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         String creditCardNumber = row[10].toString();
         String cvv = row[11].toString();
         String driverLicenseNumber = row[12].toString();
+        String createdDate = DateTime.now().toString();
 
         UserData newData = UserData(
             firstName: firstName,
@@ -74,9 +102,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             state: state,
             creditCardNumber: creditCardNumber,
             cvv: cvv,
-            driverLicenseNumber: driverLicenseNumber);
+            driverLicenseNumber: driverLicenseNumber,
+            createdDate: createdDate
+        );
 
-          await DatabaseHelper.instance.insertData(newData);
+        await DatabaseHelper.instance.insertData(newData);
       }
 
       // Reload data after importing
@@ -88,9 +118,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     }
   }
 
-  Future<void> _saveChanges(String userName, bool canRead, bool canWrite) async {
+  Future<void> _saveChanges(String emailId, bool canWrite) async {
     // Save changes to the database
-    await DatabaseHelper.instance.updateUserPermissions(userName, canRead, canWrite);
+    await DatabaseHelper.instance.updateUserPermissions(emailId, canWrite);
 
     // Reload users after saving changes
     _loadUsers();
@@ -106,87 +136,119 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Admin Dashboard'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () {
+              Navigator.pushReplacement(context,
+                  MaterialPageRoute(builder: (context) => LoginPage()));
+            },
+          ),
+        ],
       ),
-      body:  Column(
+      body: Column(
         children: <Widget>[
-      ElevatedButton(
-      onPressed: _importCSV,
-      child: Text('Import CSV'),
-    ),
-      Expanded(
-        child: ListView.builder(
-        itemCount: _users.length,
-        itemBuilder: (context, index) {
-          User user = _users[index];
-          return ListTile(
-            title: Text(user.username),
-            subtitle: Row(
-              children: <Widget>[
-                Text('Can Read: ${user.canRead ? 'Yes' : 'No'}'),
-                SizedBox(width: 16),
-                Text('Can Write: ${user.canWrite ? 'Yes' : 'No'}'),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: _importCSV,
+                    child: Text('Import CSV'),
+                  ),
+                  SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: _addUser,
+                    child: Text('Add User'),
+                  ),
+                  SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: _deleteSelectedUsers,
+                    child: Text('Delete Selected Users'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Expanded(
+            child: DataTable(
+              columns: [
+                DataColumn(label: Text('Username')),
+                DataColumn(label: Text('Can Write')),
+                DataColumn(label: Text('Actions')),
               ],
-            ),
-            trailing: ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    bool _canRead = user.canRead;
-                    bool _canWrite = user.canWrite;
-                    return AlertDialog(
-                      title: Text('Edit Permissions'),
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: <Widget>[
-                          CheckboxListTile(
-                            title: Text('Can Read'),
-                            value: _canRead,
-                            onChanged: (value) {
-                              setState(() {
-                                _canRead = value ?? false;
-                              });
-                            },
-                          ),
-                          CheckboxListTile(
-                            title: Text('Can Write'),
-                            value: _canWrite,
-                            onChanged: (value) {
-                              setState(() {
-                                _canWrite = value ?? false;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
-                      actions: <Widget>[
-                        TextButton(
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                          child: Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () {
-                            // Save changes when the user clicks 'Save'
-                            _saveChanges(user.username, _canRead, _canWrite);
-                            Navigator.of(context).pop();
-                          },
-                          child: Text('Save'),
-                        ),
-                      ],
-                    );
+              rows: _users
+                  .map(
+                    (user) => DataRow(
+                  selected: _selectedUsers.contains(user),
+                  onSelectChanged: (selected) {
+                    setState(() {
+                      if (selected != null && selected) {
+                        _selectedUsers.add(user);
+                      } else {
+                        _selectedUsers.remove(user);
+                      }
+                    });
                   },
-                );
-              },
-              child: Text('Edit Permissions'),
+                  cells: [
+                    DataCell(Text(user.username)),
+                    DataCell(Text(user.canWrite ? 'Yes' : 'No')),
+                    DataCell(
+                      ElevatedButton(
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              bool _canWrite = user.canWrite;
+                              return AlertDialog(
+                                title: Text('Edit Permissions'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: <Widget>[
+                                    CheckboxListTile(
+                                      title: Text('Can Write'),
+                                      value: _canWrite,
+                                      onChanged: (value) {
+                                        setState(() {
+                                          _canWrite = value ?? false;
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
+                                actions: <Widget>[
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('Cancel'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      _saveChanges(
+                                          user.emailId, _canWrite);
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('Save'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        child: Text('Edit Permissions'),
+                      ),
+                    ),
+                  ],
+                ),
+              )
+                  .toList(),
             ),
-          );
-        },
+          ),
+        ],
       ),
-    )
-        ]
-    )
     );
   }
 }

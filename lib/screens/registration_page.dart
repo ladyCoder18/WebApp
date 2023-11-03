@@ -1,28 +1,44 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/database_helper.dart';
+import 'login_page.dart';
 
 class RegistrationPage extends StatelessWidget {
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController emailIdController = TextEditingController();
+
+  bool isEmailValid(String email) {
+    // Regular expression for validating an Email
+    // This pattern ensures that the email follows a common email pattern
+    final RegExp emailRegex = RegExp(r'^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+');
+
+    // Check if the email matches the pattern
+    return emailRegex.hasMatch(email);
+  }
 
   void _register(BuildContext context) async {
     String username = usernameController.text;
     String password = passwordController.text;
+    String emailId = emailIdController.text;
 
     // Validate username and password (add more validation logic if needed)
-    if (username.isNotEmpty && password.isNotEmpty) {
-      User newUser = User(username: username, password: password, canRead: false, canWrite: false);
-      int userId = await DatabaseHelper.instance.insertUser(newUser);
+    if (username.isNotEmpty && password.isNotEmpty && emailId.isNotEmpty) {
+      User newUser = User(
+          username: username,
+          password: password,
+          emailId: emailId,
+          canWrite: false);
+      User? user = await DatabaseHelper.instance.getUserByEmailId(emailId);
 
-      if (userId != -1) {
-        // Registration successful, show a success message
+      if (user != null) {
+        // user already exists
         showDialog(
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              title: Text('Success'),
-              content: Text('Registration successful! User ID: $userId'),
+              title: Text('Error'),
+              content: Text('User with the given emailId already exists!'),
               actions: <Widget>[
                 TextButton(
                   onPressed: () {
@@ -35,33 +51,77 @@ class RegistrationPage extends StatelessWidget {
           },
         );
       } else {
-        // Registration failed, show an error message
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Error'),
-              content: Text('Failed to register user.'),
-              actions: <Widget>[
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('OK'),
-                ),
-              ],
+        if (!isEmailValid(emailId)) {
+          // Registration failed, show an error message
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Error'),
+                content: Text(
+                    'Failed to register user. Please make sure to enter valid email'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+        else if (username.length < 4 || password.length < 8) {
+          // Invalid input, show an error message
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text('Error'),
+                content: Text('Invalid username or password!'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                    child: Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        } else {
+          int userId = await DatabaseHelper.instance.insertUser(newUser);
+          if (userId != -1) {
+            // Registration successful, show a success message
+            showDialog(
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text('Success'),
+                  content: Text('User $userId registered successfully!'),
+                  actions: <Widget>[
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      child: Text('OK'),
+                    ),
+                  ],
+                );
+              },
             );
-          },
-        );
+          }
+        }
       }
     } else {
-      // Invalid input, show an error message
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text('Error'),
-            content: Text('Invalid username or password.'),
+            content: Text('Please make sure to enter all details'),
             actions: <Widget>[
               TextButton(
                 onPressed: () {
@@ -78,6 +138,7 @@ class RegistrationPage extends StatelessWidget {
     //Clear the contents
     usernameController.clear();
     passwordController.clear();
+    emailIdController.clear();
   }
 
   @override
@@ -93,12 +154,21 @@ class RegistrationPage extends StatelessWidget {
           children: <Widget>[
             TextField(
               controller: usernameController,
-              decoration: InputDecoration(labelText: 'Username'),
+              decoration: InputDecoration(labelText: 'Username', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person),
+                  hintText: 'Min 4 characters',
+                  hintStyle: TextStyle(fontSize: 12, color: Colors.grey)),
             ),
             TextField(
               controller: passwordController,
               obscureText: true,
-              decoration: InputDecoration(labelText: 'Password'),
+              decoration: InputDecoration(labelText: 'Password', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock),
+                  hintText: 'Min 8 characters (letters, symbols and numbers)',
+                  hintStyle: TextStyle(fontSize: 12, color: Colors.grey)),
+
+            ),
+            TextField(
+              controller: emailIdController,
+              decoration: InputDecoration(labelText: 'EmailId', border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
             ),
             SizedBox(height: 20),
             ElevatedButton(
@@ -106,6 +176,20 @@ class RegistrationPage extends StatelessWidget {
                 _register(context);
               },
               child: Text('Register'),
+            ),
+            SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                // Navigate to login page and remove the registration page from the stack
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+              },
+              child: Text(
+                'Already have an account? Login here',
+                style: TextStyle(color: Colors.blue),
+              ),
             ),
           ],
         ),

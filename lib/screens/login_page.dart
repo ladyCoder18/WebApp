@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:webapp/screens/select_options.dart';
 import '../models/user.dart';
 import '../services/database_helper.dart';
 import 'registration_page.dart';
 import 'admin_dashboard.dart';
-import 'display_details.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController usernameController = TextEditingController();
@@ -16,10 +16,10 @@ class LoginPage extends StatelessWidget {
     // Check if the user is an admin
     if (username == 'admin' && password == 'admin') {
       Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (context) => AdminDashboardPage()));
+          MaterialPageRoute(builder: (context) => SelectOptionsPage()));
     } else {
-      User? user = await DatabaseHelper.instance.getUserByUsernameAndPassword(
-          username, password);
+      User? user = await DatabaseHelper.instance
+          .getUserByUsernameAndPassword(username, password);
 
       if (user != null) {
         // Regular user login successful, navigate to display details page
@@ -46,6 +46,10 @@ class LoginPage extends StatelessWidget {
         );
       }
     }
+
+    //Clear the contents
+    usernameController.clear();
+    passwordController.clear();
   }
 
   @override
@@ -79,8 +83,10 @@ class LoginPage extends StatelessWidget {
             TextButton(
               onPressed: () {
                 // Navigate to registration page
-                Navigator.push(context, MaterialPageRoute(builder: (context) => RegistrationPage()));
-
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => RegistrationPage()));
               },
               child: Text('Register'),
             ),
