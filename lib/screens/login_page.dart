@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:webapp/screens/select_options.dart';
+import 'package:webapp/screens/admin_landing_page.dart';
+import 'package:webapp/screens/reset_password_page.dart';
 import '../models/user.dart';
 import '../services/database_helper.dart';
 import 'registration_page.dart';
-import 'admin_dashboard.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController usernameController = TextEditingController();
@@ -16,7 +16,7 @@ class LoginPage extends StatelessWidget {
     // Check if the user is an admin
     if (username == 'admin' && password == 'admin') {
       Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (context) => SelectOptionsPage()));
+          MaterialPageRoute(builder: (context) => AdminLandingPage()));
     } else {
       User? user = await DatabaseHelper.instance
           .getUserByUsernameAndPassword(username, password);
@@ -52,6 +52,14 @@ class LoginPage extends StatelessWidget {
     passwordController.clear();
   }
 
+  void _forgotPassword(BuildContext context) {
+    // Navigate to the reset password page
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ResetPasswordPage()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -79,7 +87,13 @@ class LoginPage extends StatelessWidget {
               },
               child: Text('Login'),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 10),
+            TextButton(
+              onPressed: () {
+                _forgotPassword(context);
+              },
+              child: Text('Forgot Password'),
+            ),
             TextButton(
               onPressed: () {
                 // Navigate to registration page

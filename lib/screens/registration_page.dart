@@ -1,12 +1,23 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 import '../services/database_helper.dart';
+import '../services/email_service.dart';
 import 'login_page.dart';
 
 class RegistrationPage extends StatelessWidget {
   final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
   final TextEditingController emailIdController = TextEditingController();
+
+  String generateRandomPassword() {
+    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*()-_=+[]{}|;:,.<>?';
+    final random = Random();
+    return String.fromCharCodes(
+      List.generate(12, (index) => chars.codeUnitAt(random.nextInt(chars.length))),
+    );
+  }
+
 
   bool isEmailValid(String email) {
     // Regular expression for validating an Email
@@ -19,14 +30,14 @@ class RegistrationPage extends StatelessWidget {
 
   void _register(BuildContext context) async {
     String username = usernameController.text;
-    String password = passwordController.text;
     String emailId = emailIdController.text;
 
     // Validate username and password (add more validation logic if needed)
-    if (username.isNotEmpty && password.isNotEmpty && emailId.isNotEmpty) {
+    if (username.isNotEmpty && emailId.isNotEmpty) {
+      String generatedPassword = generateRandomPassword();
       User newUser = User(
           username: username,
-          password: password,
+          password: generatedPassword,
           emailId: emailId,
           canWrite: false);
       User? user = await DatabaseHelper.instance.getUserByEmailId(emailId);
@@ -72,14 +83,14 @@ class RegistrationPage extends StatelessWidget {
             },
           );
         }
-        else if (username.length < 4 || password.length < 8) {
+        else if (username.length < 4) {
           // Invalid input, show an error message
           showDialog(
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
                 title: Text('Error'),
-                content: Text('Invalid username or password!'),
+                content: Text('Invalid username!'),
                 actions: <Widget>[
                   TextButton(
                     onPressed: () {
@@ -94,13 +105,34 @@ class RegistrationPage extends StatelessWidget {
         } else {
           int userId = await DatabaseHelper.instance.insertUser(newUser);
           if (userId != -1) {
-            // Registration successful, show a success message
+            // Registration successful, send email and show success message
+            bool emailSent = await EmailService.sendEmail(emailId, username, generatedPassword);
+            if (emailSent) {
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    title: Text('Success'),
+                    content: Text('User $username registered successfully!'),
+                    actions: <Widget>[
+                      TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                        },
+                        child: Text('OK'),
+                      ),
+                    ],
+                  );
+                },
+              );
+            }
+          } else {
             showDialog(
               context: context,
               builder: (BuildContext context) {
                 return AlertDialog(
-                  title: Text('Success'),
-                  content: Text('User $userId registered successfully!'),
+                  title: Text('Failure'),
+                  content: Text('User $username registration not successful!'),
                   actions: <Widget>[
                     TextButton(
                       onPressed: () {
@@ -137,7 +169,6 @@ class RegistrationPage extends StatelessWidget {
 
     //Clear the contents
     usernameController.clear();
-    passwordController.clear();
     emailIdController.clear();
   }
 
@@ -157,14 +188,6 @@ class RegistrationPage extends StatelessWidget {
               decoration: InputDecoration(labelText: 'Username', border: OutlineInputBorder(), prefixIcon: Icon(Icons.person),
                   hintText: 'Min 4 characters',
                   hintStyle: TextStyle(fontSize: 12, color: Colors.grey)),
-            ),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: InputDecoration(labelText: 'Password', border: OutlineInputBorder(), prefixIcon: Icon(Icons.lock),
-                  hintText: 'Min 8 characters (letters, symbols and numbers)',
-                  hintStyle: TextStyle(fontSize: 12, color: Colors.grey)),
-
             ),
             TextField(
               controller: emailIdController,
