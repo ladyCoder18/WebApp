@@ -1,5 +1,6 @@
 import 'package:csv/csv.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:webapp/screens/login_page.dart';
 import '../services/database_helper.dart';
 import '../models/user.dart';
@@ -7,12 +8,14 @@ import '../models/userdata.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
-class AdminDashboardPage extends StatefulWidget {
+import 'admin_landing_page.dart';
+
+class ModifyUserDetailsPage extends StatefulWidget {
   @override
-  _AdminDashboardPageState createState() => _AdminDashboardPageState();
+  _ModifyUserDetailsPageState createState() => _ModifyUserDetailsPageState();
 }
 
-class _AdminDashboardPageState extends State<AdminDashboardPage> {
+class _ModifyUserDetailsPageState extends State<ModifyUserDetailsPage> {
   List<User> _users = [];
   List<UserData> _data = [];
   List<User> _selectedUsers = [];
@@ -55,11 +58,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     ));
   }
 
-  void _addUser() {
-    // Show a dialog to enter user details
-    // Handle user addition logic here
-  }
-
   Future<void> _importCSV() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -87,7 +85,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         String creditCardNumber = row[10].toString();
         String cvv = row[11].toString();
         String driverLicenseNumber = row[12].toString();
-        String createdDate = DateTime.now().toString();
+        String createdDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
         UserData newData = UserData(
             firstName: firstName,
@@ -103,8 +101,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             creditCardNumber: creditCardNumber,
             cvv: cvv,
             driverLicenseNumber: driverLicenseNumber,
-            createdDate: createdDate
-        );
+            createdDate: createdDate);
 
         await DatabaseHelper.instance.insertData(newData);
       }
@@ -135,7 +132,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Admin Dashboard'),
+        title: Text('Modify User Details'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => AdminLandingPage()),
+            );
+          },
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
@@ -160,11 +166,6 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   ),
                   SizedBox(width: 16),
                   ElevatedButton(
-                    onPressed: _addUser,
-                    child: Text('Add User'),
-                  ),
-                  SizedBox(width: 16),
-                  ElevatedButton(
                     onPressed: _deleteSelectedUsers,
                     child: Text('Delete Selected Users'),
                   ),
@@ -173,78 +174,87 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ),
           ),
           Expanded(
-            child: DataTable(
-              columns: [
-                DataColumn(label: Text('Username')),
-                DataColumn(label: Text('Can Write')),
-                DataColumn(label: Text('Actions')),
-              ],
-              rows: _users
-                  .map(
-                    (user) => DataRow(
-                  selected: _selectedUsers.contains(user),
-                  onSelectChanged: (selected) {
-                    setState(() {
-                      if (selected != null && selected) {
-                        _selectedUsers.add(user);
-                      } else {
-                        _selectedUsers.remove(user);
-                      }
-                    });
-                  },
-                  cells: [
-                    DataCell(Text(user.username)),
-                    DataCell(Text(user.canWrite ? 'Yes' : 'No')),
-                    DataCell(
-                      ElevatedButton(
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              bool _canWrite = user.canWrite;
-                              return AlertDialog(
-                                title: Text('Edit Permissions'),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: <Widget>[
-                                    CheckboxListTile(
-                                      title: Text('Can Write'),
-                                      value: _canWrite,
-                                      onChanged: (value) {
-                                        setState(() {
-                                          _canWrite = value ?? false;
-                                        });
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                actions: <Widget>[
-                                  TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Text('Cancel'),
-                                  ),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      _saveChanges(
-                                          user.emailId, _canWrite);
-                                      Navigator.of(context).pop();
-                                    },
-                                    child: Text('Save'),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                columns: [
+                  DataColumn(label: Text('FirstName')),
+                  DataColumn(label: Text('LastName')),
+                  DataColumn(label: Text('Password')),
+                  DataColumn(label: Text('UserId')),
+                  DataColumn(label: Text('Can Write')),
+                  DataColumn(label: Text('Actions')),
+                ],
+                rows: _users
+                    .map(
+                      (user) => DataRow(
+                        selected: _selectedUsers.contains(user),
+                        onSelectChanged: (selected) {
+                          setState(() {
+                            if (selected != null && selected) {
+                              _selectedUsers.add(user);
+                            } else {
+                              _selectedUsers.remove(user);
+                            }
+                          });
                         },
-                        child: Text('Edit Permissions'),
+                        cells: [
+                          DataCell(Text(user.firstName)),
+                          DataCell(Text(user.lastName)),
+                          DataCell(Text(user.password)),
+                          DataCell(Text(user.userId)),
+                          DataCell(Text(user.canWrite ? 'Yes' : 'No')),
+                          DataCell(
+                            ElevatedButton(
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    bool _canWrite = user.canWrite;
+                                    return AlertDialog(
+                                      title: Text('Edit Permissions'),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          CheckboxListTile(
+                                            title: Text('Can Write'),
+                                            value: _canWrite,
+                                            onChanged: (value) {
+                                              setState(() {
+                                                _canWrite = value ?? false;
+                                              });
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                      actions: <Widget>[
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            _saveChanges(
+                                                user.emailId, _canWrite);
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: Text('Save'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              child: Text('Edit Permissions'),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
-              )
-                  .toList(),
+                    )
+                    .toList(),
+              ),
             ),
           ),
         ],

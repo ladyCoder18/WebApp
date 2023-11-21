@@ -3,7 +3,6 @@ import 'package:webapp/screens/admin_landing_page.dart';
 import 'package:webapp/screens/reset_password_page.dart';
 import '../models/user.dart';
 import '../services/database_helper.dart';
-import 'registration_page.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController usernameController = TextEditingController();
@@ -19,7 +18,7 @@ class LoginPage extends StatelessWidget {
           MaterialPageRoute(builder: (context) => AdminLandingPage()));
     } else {
       User? user = await DatabaseHelper.instance
-          .getUserByUsernameAndPassword(username, password);
+          .getUserByUserIdAndPassword(username, password);
 
       if (user != null) {
         // Regular user login successful, navigate to display details page
@@ -93,16 +92,6 @@ class LoginPage extends StatelessWidget {
                 _forgotPassword(context);
               },
               child: Text('Forgot Password'),
-            ),
-            TextButton(
-              onPressed: () {
-                // Navigate to registration page
-                Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => RegistrationPage()));
-              },
-              child: Text('Register'),
             ),
           ],
         ),

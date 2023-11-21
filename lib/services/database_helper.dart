@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/user.dart';
@@ -24,7 +25,6 @@ class DatabaseHelper {
       path,
       version: _databaseVersion,
       onCreate: _createDatabase,
-      //onUpgrade: _onUpgrade
     );
   }
 
@@ -32,8 +32,10 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
+        firstName TEXT,
+        lastName TEXT,
         password TEXT,
+        userId TEXT,
         emailId TEXT, 
         canWrite INTEGER
       )
@@ -53,13 +55,14 @@ class DatabaseHelper {
       creditCardNumber TEXT,
       cvv TEXT,
       driverLicenseNumber TEXT,
-      createdDate TEXT
+      createdDate DATE
     )
     ''');
   }
 
   Future<int> insertUser(User user) async {
     Database db = await instance.database;
+    print(user.password);
     return await db.insert('users', user.toMap());
   }
 
@@ -68,49 +71,50 @@ class DatabaseHelper {
     return await db.insert('userData', data.toMap());
   }
 
-  Future<User?> getUserByEmailId(String emailId) async {
+  Future<User?> getUserByUserId(String userId) async {
     Database db = await instance.database;
-    List<Map<String, dynamic>> results = await db.query('users', where: 'emailId = ?', whereArgs: [emailId]);
+    List<Map<String, dynamic>> results = await db.query('users', where: 'userId = ?', whereArgs: [userId]);
     if (results.isEmpty) return null;
     return User(
         id: results[0]['id'],
-        username: results[0]['username'],
+        firstName: results[0]['firstName'],
+        lastName: results[0]['lastName'],
         password: results[0]['password'],
+        userId: results[0]['userId'],
         emailId: results[0]['emailId'],
-        canWrite: results[0]['canWrite']
+        canWrite: results[0]['canWrite'] == 1 ? true : false
     );
   }
 
-  Future<User?> getUserByUsernameAndPassword(
+  Future<User?> getUserByUserIdAndPassword(
       String username, String password) async {
     Database db = await instance.database;
     List<Map<String, dynamic>> results = await db.query('users',
-        where: 'username = ? and password = ?',
+        where: 'userId = ? and password = ?',
         whereArgs: [username, password]);
     if (results.isEmpty) return null;
     return User(
         id: results[0]['id'],
-        username: results[0]['username'],
+        firstName: results[0]['firstName'],
+        lastName: results[0]['lastName'],
         password: results[0]['password'],
+        userId: results[0]['userId'],
         emailId: results[0]['emailId'],
         canWrite: results[0]['canWrite'] == 1 ? true : false);
   }
 
   Future<List<Map<String, dynamic>>> getPagedData(
-      String dateOfBirth, int page, int pageSize) async {
+      String createdDate, int page, int pageSize) async {
     Database db = await instance.database;
     int offset = (page - 1) * pageSize;
 
-    // SQLite query to retrieve paged data based on date and name
     String query = '''
       SELECT * FROM userData
-      WHERE dateOfBirth = ?
+      WHERE createdDate = ?
       LIMIT $pageSize OFFSET $offset
     ''';
 
-    // Replace date_column and name_column with actual column names in your 'data' table
-    // Pass date and name as arguments to the query
-    List<Map<String, dynamic>> result = await db.rawQuery(query, [dateOfBirth]);
+    List<Map<String, dynamic>> result = await db.rawQuery(query, [createdDate]);
 
     return result;
   }
@@ -119,13 +123,11 @@ class DatabaseHelper {
       String firstName) async {
     Database db = await instance.database;
 
-    // SQLite query to retrieve paged data based on firstName
     String query = '''
     SELECT * FROM userData
     WHERE firstName = ?
   ''';
 
-    // Pass firstName as an argument to the query
     List<Map<String, dynamic>> result = await db.rawQuery(query, [firstName]);
 
     return result;
@@ -133,12 +135,9 @@ class DatabaseHelper {
 
   Future<void> updateUserPermissions(String emailId, bool canWrite) async {
     Database db = await instance.database;
-
-    // Assuming your users table has columns named 'id', 'canRead', and 'canWrite'
     await db.update(
       'users',
       {
-        // Store boolean as 1 for true, 0 for false
         'canWrite': canWrite ? 1 : 0,
       },
       where: 'emailId = ?',
@@ -149,7 +148,6 @@ class DatabaseHelper {
   Future<void> updateData(int? id, UserData data) async {
     Database db = await instance.database;
 
-    // Assuming your users table has columns named 'id', 'canRead', and 'canWrite'
     await db.update(
       'userData',
       {
@@ -174,16 +172,16 @@ class DatabaseHelper {
   Future<List<User>> getAllUsers() async {
     Database db = await instance.database;
 
-    // Assuming your User class has properties: id, username, canRead, and canWrite
     List<Map<String, dynamic>> result = await db.query('users');
 
-    // Convert the List<Map<String, dynamic>> to List<User>
     List<User> users = [];
     for (Map<String, dynamic> row in result) {
       users.add(User(
         id: row['id'],
-        username: row['username'],
+        firstName: row['firstName'],
+        lastName: row['lastName'],
         password: row['password'],
+        userId: row['userId'],
         emailId: row['emailId'],// Convert 1 to true, 0 to false
         canWrite: row['canWrite'] == 1,
       ));
@@ -195,10 +193,8 @@ class DatabaseHelper {
   Future<List<UserData>> getAllData() async {
     Database db = await instance.database;
 
-    // Assuming your User class has properties: id, username, canRead, and canWrite
     List<Map<String, dynamic>> result = await db.query('userData');
 
-    // Convert the List<Map<String, dynamic>> to List<User>
     List<UserData> data = [];
     for (Map<String, dynamic> row in result) {
       data.add(UserData(
@@ -264,5 +260,55 @@ class DatabaseHelper {
     Database db = await instance.database;
     await db.delete('userData', where: 'emailId = ?', whereArgs: [emailId]);
   }
+
+  Future<List<Map<String, dynamic>>> getPagedDataByDate(
+      DateTime createdDate, int page, int pageSize) async {
+    Database db = await instance.database;
+    int offset = (page - 1) * pageSize;
+
+    // Format the date to match the stored format in the database
+    String formattedDate = DateFormat('yyyy-MM-dd').format(createdDate);
+
+    // SQLite query to retrieve paged data based on date
+    String query = '''
+    SELECT * FROM userData
+    WHERE createdDate >= date(?)
+    LIMIT $pageSize OFFSET $offset
+  ''';
+
+    // Pass formatted date as an argument to the query
+    List<Map<String, dynamic>> result = await db.rawQuery(query, [formattedDate]);
+
+    return result;
+  }
+
+  Future<List<Map<String, dynamic>>> getPagedDataByDateRange(
+      DateTime startDate,
+      DateTime endDate,
+      int page,
+      int pageSize,
+      ) async {
+    final db = await instance.database;
+    String formattedStartDate = DateFormat('yyyy-MM-dd').format(startDate);
+    String formattedEndDate = DateFormat('yyyy-MM-dd').format(endDate);
+
+    final offset = (page - 1) * pageSize;
+
+    final List<Map<String, dynamic>> result = await db.rawQuery(
+      '''SELECT * FROM userData WHERE createdDate BETWEEN ? AND ? ORDER BY createdDate
+         LIMIT ? OFFSET ?
+      ''',
+      [
+        formattedStartDate,
+        formattedEndDate,
+        pageSize,
+        offset,
+      ],
+    );
+
+    return result;
+  }
+
+
 
 }
