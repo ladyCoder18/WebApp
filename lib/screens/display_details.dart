@@ -152,7 +152,6 @@ class _DisplayDetailsPageState extends State<DisplayDetailsPage> {
     }
 
     Widget _getCellValue(dynamic value) {
-      print(value.toString().isNotEmpty);
       return value != null && value.toString().isNotEmpty
           ? Icon(Icons.check, color: Colors.green)
           : Icon(Icons.close_sharp, color: Colors.red);

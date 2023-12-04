@@ -62,13 +62,11 @@ class DatabaseHelper {
 
   Future<int> insertUser(User user) async {
     Database db = await instance.database;
-    print(user.password);
     return await db.insert('users', user.toMap());
   }
 
   Future<int> insertData(UserData data) async {
     Database db = await instance.database;
-    print(data.toString());
     return await db.insert('userData', data.toMap());
   }
 
