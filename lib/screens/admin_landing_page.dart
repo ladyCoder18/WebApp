@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:webapp/screens/edit_data.dart';
 import 'package:webapp/screens/registration_page.dart';
-import 'import_csv.dart';
 import 'login_page.dart';
 import 'modify_user_details.dart';
 
@@ -100,7 +99,7 @@ class AdminLandingPage extends StatelessWidget {
                     padding: EdgeInsets.all(16),
                     child: Center(
                       child: Text(
-                        'Edit Data',
+                        'View Data',
                         style: TextStyle(fontSize: 18),
                       ),
                     ),

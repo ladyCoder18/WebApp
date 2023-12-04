@@ -68,26 +68,48 @@ class _ModifyUserDetailsPageState extends State<ModifyUserDetailsPage> {
       File file = File(result.files.single.path!);
       String contents = await file.readAsString();
       List<List<dynamic>> rowsAsListOfValues =
-          CsvToListConverter().convert(contents);
+      CsvToListConverter().convert(contents);
 
-      // Import new data from the CSV file
-      for (List<dynamic> row in rowsAsListOfValues) {
-        String firstName = row[0].toString();
-        String lastName = row[1].toString();
-        String emailId = row[2].toString();
-        String gender = row[3].toString();
-        String dateOfBirth = row[4].toString();
-        String phoneNumber = row[5].toString();
-        String ssn = row[6].toString();
-        String address = row[7].toString();
-        String city = row[8].toString();
-        String state = row[9].toString();
-        String creditCardNumber = row[10].toString();
-        String cvv = row[11].toString();
-        String driverLicenseNumber = row[12].toString();
-        String createdDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      // Check if there is at least one row in the CSV
+      if (rowsAsListOfValues.isNotEmpty) {
+        // Extract the header row
+        List<dynamic> headerRow = rowsAsListOfValues[0];
 
-        UserData newData = UserData(
+        // Find column indices for each field
+        int firstNameIndex = headerRow.indexOf('First Name');
+        int lastNameIndex = headerRow.indexOf('Last Name');
+        int emailIdIndex = headerRow.indexOf('Email');
+        int genderIndex = headerRow.indexOf('Gender');
+        int dateOfBirthIndex = headerRow.indexOf('Date of Birth');
+        int phoneNumberIndex = headerRow.indexOf('Phone Number');
+        int ssnIndex = headerRow.indexOf('SSN');
+        int addressIndex = headerRow.indexOf('Address');
+        int cityIndex = headerRow.indexOf('City');
+        int stateIndex = headerRow.indexOf('State');
+        int creditCardNumberIndex = headerRow.indexOf('Credit Card Number');
+        int cvvIndex = headerRow.indexOf('CVV');
+        int driverLicenseNumberIndex = headerRow.indexOf('Driver License Number');
+
+        // Import new data from the CSV file
+        for (int i = 1; i < rowsAsListOfValues.length; i++) {
+          List<dynamic> row = rowsAsListOfValues[i];
+
+          String firstName = firstNameIndex != -1 ? row[firstNameIndex].toString() : '';
+          String lastName = lastNameIndex != -1 ? row[lastNameIndex].toString() : '';
+          String emailId = emailIdIndex != -1 ? row[emailIdIndex].toString() : '';
+          String gender = genderIndex != -1 ? row[genderIndex].toString() : '';
+          String dateOfBirth = dateOfBirthIndex != -1 ? row[dateOfBirthIndex].toString() : '';
+          String phoneNumber = phoneNumberIndex != -1 ? row[phoneNumberIndex].toString() : '';
+          String ssn = ssnIndex != -1 ? row[ssnIndex].toString() : '';
+          String address = addressIndex != -1 ? row[addressIndex].toString() : '';
+          String city = cityIndex != -1 ? row[cityIndex].toString() : '';
+          String state = stateIndex != -1 ? row[stateIndex].toString() : '';
+          String creditCardNumber = creditCardNumberIndex != -1 ? row[creditCardNumberIndex].toString() : '';
+          String cvv = cvvIndex != -1 ? row[cvvIndex].toString() : '';
+          String driverLicenseNumber = driverLicenseNumberIndex != -1 ? row[driverLicenseNumberIndex].toString() : '';
+          String createdDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
+
+          UserData newData = UserData(
             firstName: firstName,
             lastName: lastName,
             emailId: emailId,
@@ -101,19 +123,24 @@ class _ModifyUserDetailsPageState extends State<ModifyUserDetailsPage> {
             creditCardNumber: creditCardNumber,
             cvv: cvv,
             driverLicenseNumber: driverLicenseNumber,
-            createdDate: createdDate);
+            createdDate: createdDate,
+          );
 
-        await DatabaseHelper.instance.insertData(newData);
+          await DatabaseHelper.instance.insertData(newData);
+        }
+
+        // Reload data after importing
+        _loadData();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('CSV data imported successfully.'),
+          ),
+        );
       }
-
-      // Reload data after importing
-      _loadData();
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('CSV data imported successfully.'),
-      ));
     }
   }
+
 
   Future<void> _saveChanges(String emailId, bool canWrite) async {
     // Save changes to the database

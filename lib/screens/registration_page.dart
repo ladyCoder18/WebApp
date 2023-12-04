@@ -41,7 +41,7 @@ class RegistrationPage extends StatelessWidget {
 
     // Check if the generated userId already exists in the database
     while (await DatabaseHelper.instance.getUserByUserId(userId) != null) {
-      userId = '$firstNamePrefix.$lastName$count';
+      userId = '$firstNamePrefix$lastName$count';
       count++;
     }
 

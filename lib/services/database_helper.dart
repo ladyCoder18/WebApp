@@ -68,6 +68,7 @@ class DatabaseHelper {
 
   Future<int> insertData(UserData data) async {
     Database db = await instance.database;
+    print(data.toString());
     return await db.insert('userData', data.toMap());
   }
 
@@ -91,7 +92,7 @@ class DatabaseHelper {
     Database db = await instance.database;
     List<Map<String, dynamic>> results = await db.query('users',
         where: 'userId = ? and password = ?',
-        whereArgs: [username, password]);
+        whereArgs: [username.toLowerCase(), password]);
     if (results.isEmpty) return null;
     return User(
         id: results[0]['id'],
