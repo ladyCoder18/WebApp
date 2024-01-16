@@ -32,7 +32,7 @@ class RegistrationPage extends StatelessWidget {
 
   Future<String> generateUserId(String firstName, String lastName) async {
     // Take the first letter from the first name
-    String firstNamePrefix = firstName.length >= 1 ? firstName.substring(0, 1) : firstName;
+    String firstNamePrefix = firstName.length >= 1 ? firstName.substring(0, 1).toLowerCase() : firstName.toLowerCase();
     String lastNameLowercase = lastName.toLowerCase();
 
     // Use the whole last name
